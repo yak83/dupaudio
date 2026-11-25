@@ -1,2 +1,38 @@
 // dupaudio resources
-1 ICON "dupaudio.ico"
+
+// version
+1 VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000904b0"
+        BEGIN
+            VALUE "CompanyName", "Mike Fowler"
+            VALUE "FileDescription", "Windows Audio Output Duplicator"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "dupaudio.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Mike Fowler"
+            VALUE "OriginalFilename", "dupaudio.exe"
+            VALUE "ProductName", "DupAudio"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x9, 1200
+    END
+END
+
+// icon
+2 ICON "dupaudio.ico"

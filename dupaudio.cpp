@@ -107,7 +107,7 @@ static const REFERENCE_TIME kRenderBuffer = 200000;     // rendering buffer time
 static const size_t kRingFrames = 192000;               // 1-s total ring buffer size at 192 kHz, stereo float
 
 //
-// COM helpers
+// COM functions
 //
 
 template <class T>
@@ -403,7 +403,7 @@ static bool SaveConfig(const std::wstring& path, const Config& cfg)
   return true;
 }
 
-// Windows device lookup
+// windows device lookup
 struct DeviceInfo { std::wstring id, name; };
 
 static std::wstring DeviceId(IMMDevice* dev) {
@@ -657,7 +657,7 @@ static inline void WriteSample(BYTE* p, SampleFmt fmt, float v)
   }
 }
 
-// Lock-free ring buffer for stereo float frames
+// lock-free ring buffer for stereo float frames
 class StereoRing
 {
 public:
@@ -834,7 +834,7 @@ static RunResult RunCapture(Shared& sh, std::vector<float>& stereo, std::wstring
     }
     bool failed = false;
 
-    for (;;)  // infinite loop, exists when sample packet buffer emptied or on error
+    for (;;)  // infinite loop, exits when sample packet buffer emptied or on error
     {
       UINT32 packet = 0;
       hr = capture->GetNextPacketSize(&packet);
@@ -935,8 +935,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
   StereoRing &ring = *sh.rings[index];
 
   Com<IMMDeviceEnumerator> en;
-  HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
-                                __uuidof(IMMDeviceEnumerator), en.putVoid());
+  HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), en.putVoid());
   if (FAILED(hr))
     return {false, FormatHrText(L"CoCreateInstance(MMDeviceEnumerator)", hr)};
 
@@ -965,8 +964,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
   if (!event.h)
     return {false, L"CreateEvent failed"};
 
-  hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, kRenderBuffer, 0,
-                          wf.get(), nullptr);
+  hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, kRenderBuffer, 0, wf.get(), nullptr);
   if (FAILED(hr))
     return {false, FormatHrText(L"Initialize(output)", hr)};
   hr = client->SetEventHandle(event.h);
@@ -983,7 +981,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
   if (FAILED(hr))
     return {false, FormatHrText(L"GetService(IAudioRenderClient)", hr)};
 
-  // Start with a buffer of silence so the device has something to play.
+  // start with a buffer of silence so the device has something to play
   BYTE *out = nullptr;
   if (SUCCEEDED(render->GetBuffer(bufferFrames, &out)))
     render->ReleaseBuffer(bufferFrames, AUDCLNT_BUFFERFLAGS_SILENT);
@@ -1003,7 +1001,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
   const double dstRate = static_cast<double>(wf->nSamplesPerSec);
 
   bool playing = false;
-  double frac = 0.0; // position between cur and next source frame
+  double frac = 0.0; // position between current and next source frame
   float cur[2] = {0, 0}, nxt[2] = {0, 0};
   double fillAvg = 0.0; // smoothed ring fill level (frames)
   RunResult result{false, L""};
@@ -1024,8 +1022,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
       break;
     }
 
-    // If the source has since become this same device (e.g. the Windows default
-    // changed), stop playing here so we never feed our own output back in.
+    // if the source has since become this same device (e.g. the Windows default changed), stop playing here so we never feed our own output back in.
     if (++ticks >= 100)
     {
       ticks = 0;
@@ -1060,7 +1057,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
 
     if (!playing)
     {
-      // Wait until a full target's worth of audio has arrived, then start.
+      // wait until a full target's worth of audio has arrived, then start.
       if (fill >= target && fill >= 2)
       {
         ring.Skip(fill - target);
@@ -1073,7 +1070,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
     }
     else if (fill > target * 4)
     {
-      // Far behind (e.g. after a system stall): jump back to the target delay.
+      // far behind (e.g. after a system stall): jump back to the target delay.
       ring.Skip(fill - target);
       fillAvg = static_cast<double>(target);
     }
@@ -1084,7 +1081,7 @@ static RunResult RunRender(Shared &sh, size_t index, std::wstring &lastErr)
       continue;
     }
 
-    // Clock-drift correction: nudge the playback speed so the buffer sits at the target.
+    // clock-drift correction: nudge the playback speed so the buffer sits at the target.
     fillAvg += 0.02 * (static_cast<double>(fill) - fillAvg);
     const double errorSec = (fillAvg - static_cast<double>(target)) / srcRate;
     const double adjust = std::max(-0.003, std::min(0.003, errorSec * 0.05));
@@ -1292,7 +1289,7 @@ static HICON MakeTrayIcon()
   return LoadAppIcon(GetModuleHandleW(nullptr), s);
 }
 
-// Tray application
+// tray application
 static const UINT WM_TRAYICON = WM_APP + 1;
 static const UINT_PTR kStatusTimer = 1;
 enum : UINT
@@ -1686,7 +1683,7 @@ static int ListDevices()
   return 0;
 }
 
-// First run (no config file): pick VB-Cable as the source if it's installed.
+// first run (no config file): pick VB-Cable as the source if it's installed.
 static Config DefaultConfig()
 {
   Config cfg;
@@ -1807,7 +1804,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
   if (app->cfg.outputLabels.size() != app->cfg.outputs.size())
     app->cfg.outputLabels.resize(app->cfg.outputs.size());
 
-  // Hidden window that owns the tray icon. (Not message-only, so it receives
+  // hidden window that owns the tray icon. (Not message-only, so it receives
   // the "TaskbarCreated" broadcast and can restore the icon if Windows' Explorer shell restarts.)
   WNDCLASSEXW wc = {};
   wc.cbSize = sizeof(wc);
@@ -1836,7 +1833,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
   if (firstRun || app->cfg.outputs.empty())
     TrayBalloon(*app, L"dupaudio is running", L"Click the speaker icon to choose which headsets get the sound.");
 
-  // Message loop that also wakes for "dupaudio --stop".
+  // message loop that also wakes for "dupaudio --stop".
   bool running = true;
   while (running)
   {
